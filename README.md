@@ -26,8 +26,9 @@ All values on the stack are integers. Characters are represented by their ASCII 
 
 | Instruction | Description |
 |-------------|-------------|
-| `ANTE`      | Push `0` onto the stack. This is the only way to introduce a new value — all other numbers are built by incrementing from zero. |
-| `RAISE`     | Pop the top value, add `1`, and push the result back. Used repeatedly after `ANTE` to build up any integer. |
+| `ANTE`      | Push `0` onto the stack. |
+| `RAISE`     | Pop the top value, add `1`, and push the result back. Used for incrementing values. |
+| `BET n`     | Lyrics lookup. Pushes the ASCII value of the character at position `n` in `kennyrogers.txt`. This is the primary way to push specific characters onto the stack. |
 | `CALL`      | Duplicate the top value. Pops it, then pushes it back twice, so the stack ends up with two copies. |
 | `FOLD`      | Subtraction. Pops `A` (top), then pops `B` (second), and pushes `B - A`. |
 | `DEAL`      | Read one line of input. Pushes the ASCII code of the first character. If input is empty or exhausted, pushes `0`. |
@@ -40,7 +41,8 @@ All values on the stack are integers. Characters are represented by their ASCII 
 
 ### Key Concepts
 
-- **Building numbers:** Since `ANTE` only pushes `0`, you build any number by following it with repeated `RAISE` instructions. For example, to push `72` (ASCII `H`), you write `ANTE` followed by 72 `RAISE` instructions.
+- **Building numbers with `BET`:** `BET n` looks up the character at position `n` in `kennyrogers.txt` and pushes its ASCII code. For example, position 239 is `H` (ASCII 72), so `BET 239` pushes `72`. If the character you need isn't in the lyrics, use `BET` to get a nearby value and `RAISE` to increment to it (e.g., `BET 6` pushes 32, then `RAISE` makes it 33 = `!`).
+- **Incrementing with `RAISE`:** `RAISE` pops the top value, adds 1, and pushes the result. Useful for fine-tuning values after a `BET`, or for arithmetic in loops.
 - **Conditional jumps:** `ALLIN n` is the only form of control flow. It pops and checks the top value — jumping to line `n` only when the value is zero.
 - **Unconditional jumps:** Push `0` with `ANTE`, then immediately `ALLIN n`. Since the top is guaranteed to be `0`, the jump always fires.
 - **Stack rotation:** `CUT` and `SHUFFLE` let you access values buried in the stack without losing them. `CUT` sends the top to the bottom; `SHUFFLE` brings the bottom to the top.
@@ -174,27 +176,39 @@ aaaaaaa
 
 ### helloworld.nlh — Hello, World!
 
-This program prints `Hello, world!` by building each character's ASCII code on the stack and printing them in sequence. It makes clever use of `CALL`, `CUT`, and `SHUFFLE` to reuse values that are needed more than once.
+```
+BET 239    → H
+SHOW
+BET 2      → e
+SHOW
+BET 86     → l
+SHOW
+BET 86     → l
+SHOW
+BET 37     → o
+SHOW
+BET 89     → ,
+SHOW
+BET 6      → (space)
+SHOW
+BET 15     → w
+SHOW
+BET 37     → o
+SHOW
+BET 3      → r
+SHOW
+BET 86     → l
+SHOW
+BET 52     → d
+SHOW
+BET 6      → (space, ASCII 32)
+RAISE      → 32 + 1 = 33 = !
+SHOW
+```
 
-**The target output** is the ASCII sequence: `72 101 108 108 111 44 32 119 111 114 108 100 33`
+This program prints `Hello, world!` using `BET` to look up each character from `kennyrogers.txt`. Each `BET n` pushes the ASCII code of the character at position `n` in the lyrics, and `SHOW` prints it.
 
-**Walkthrough:**
-
-1. **Build 32** (space) — `ANTE` + 32 `RAISE`s. Kept at the bottom for later.
-2. **Build 44** (comma) — `CALL` duplicates `32`, then 12 `RAISE`s bring it to `44`. Kept for later.
-3. **Build 72 and print `H`** — `CALL` duplicates `44`, then 28 `RAISE`s bring it to `72`. `CALL` saves a copy, `SHOW` prints `H`.
-4. **Build 100** — 28 more `RAISE`s bring `72` to `100`. Kept for later.
-5. **Print `e`** — `CALL` + `RAISE` → `101`, `CALL` saves, `SHOW` prints `e`.
-6. **Print `ll`** — 7 `RAISE`s → `108`. `CALL` + `SHOW` prints `l`, `CALL` + `SHOW` prints `l` again.
-7. **Print `o`** — `CALL` + 3 `RAISE`s → `111`, `CALL` saves, `SHOW` prints `o`.
-8. **Print `,` and space** — `SHUFFLE` twice to bring `32` and `44` to the top. `SHOW` prints `,`, `CALL` + `SHOW` prints the duplicate of `,`... actually: `SHUFFLE` brings `32` up, `SHUFFLE` brings `44` up, `SHOW` prints `,` (44), `CALL` duplicates `32`, `SHOW` prints space. `CUT` tucks a value back to the bottom.
-9. **Print `w`** — `CALL` + 8 `RAISE`s → `119`, `SHOW` prints `w`.
-10. **Print `o`** — `CALL` + `SHOW` reuses `111` from earlier on the stack.
-11. **Print `r`** — 3 `RAISE`s → `114`, `SHOW` prints `r`.
-12. **Print `ld`** — `SHOW` pops `108` (`l`), `SHOW` pops `100` (`d`).
-13. **Print `!`** — `SHUFFLE` brings `32` from the bottom, `RAISE` → `33`, `SHOW` prints `!`.
-
-The key technique is using the stack to store intermediate values and using `CALL` to duplicate them when the same character (or a nearby ASCII value) appears multiple times.
+The only character not directly in the lyrics is `!` (ASCII 33). To get it, we use `BET 6` (space = 32) followed by a bare `RAISE` to increment it to 33.
 
 **Example run:**
 
