@@ -1,4 +1,5 @@
 import sys
+import os
 
 lines = []
 try:
@@ -8,6 +9,14 @@ try:
    file.close()
 except Exception as e:
    print(f"Error while opening file:\n{e}")
+   sys.exit(0)
+
+lyricsPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), "kennyrogers.txt")
+try:
+   with open(lyricsPath) as f:
+      lyrics = f.read()
+except Exception as e:
+   print(f"Error loading lyrics file:\n{e}")
    sys.exit(0)
 
 stack = []
@@ -30,6 +39,16 @@ while pc >= 0 and pc < len(lines):
    elif instr == "RAISE":
       a = pop()
       stack.append(a+1)
+   elif instr == "BET":
+      if len(parts) < 2:
+         err("Error: Expected instruction argument for BET")
+      try:
+         index = int(parts[1])
+         if index < 0 or index >= len(lyrics):
+            err("Error: BET index out of range")
+         stack.append(ord(lyrics[index]))
+      except ValueError:
+         err("Error: Invalid argument for BET")
    elif instr == "CALL":
       a = pop()
       stack.append(a)
