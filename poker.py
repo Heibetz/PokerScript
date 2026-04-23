@@ -1,5 +1,4 @@
 import sys
-import os
 
 lines = []
 try:
@@ -9,14 +8,6 @@ try:
    file.close()
 except Exception as e:
    print(f"Error while opening file:\n{e}")
-   sys.exit(0)
-
-lyricsPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), "kennyrogers.txt")
-try:
-   with open(lyricsPath) as f:
-      lyrics = f.read()
-except Exception as e:
-   print(f"Error loading lyrics file:\n{e}")
    sys.exit(0)
 
 stack = []
@@ -38,25 +29,48 @@ while pc >= 0 and pc < len(lines):
       stack.append(0)
    elif instr == "RAISE":
       a = pop()
-      stack.append(a+1)
+      if len(parts) >= 2:
+         try:
+            stack.append(a + int(parts[1]))
+         except ValueError:
+            err("Error: Invalid argument for RAISE")
+      else:
+         stack.append(a + 1)
    elif instr == "BET":
       if len(parts) < 2:
          err("Error: Expected instruction argument for BET")
       try:
-         index = int(parts[1])
-         if index < 0 or index >= len(lyrics):
-            err("Error: BET index out of range")
-         stack.append(ord(lyrics[index]))
+         stack.append(int(parts[1]))
       except ValueError:
          err("Error: Invalid argument for BET")
    elif instr == "CALL":
       a = pop()
       stack.append(a)
       stack.append(a)
+   elif instr == "SNAPCALL":
+      a = pop()
+      b = pop()
+      stack.append(b + a)
+   elif instr == "SHOWDOWN":
+      if len(stack) < 2:
+         if len(stack) == 1:
+            pop()
+         stack.append(0)
+      else:
+         a = pop()
+         b = pop(0)
+         if a == b:
+            stack.append(1)
+         else:
+            stack.append(2)
    elif instr == "SHOW":
       print(chr(pop()), end="", flush=True)
    elif instr == "STACK":
       print(int(pop()), end="", flush=True)
+   elif instr == "CHECK":
+      if len(stack) < 1:
+         err("Error: Stack underflow")
+      print(stack[-1], end="", flush=True)
    elif instr == "FOLD":
       a = pop()
       b = pop()
@@ -71,6 +85,13 @@ while pc >= 0 and pc < len(lines):
             pc = line - 1 # - 1 again because we're incrementing pc each instruction
       except:
          err("Error: Invalid instruction argument for ALLIN")
+   elif instr == "BLUFF":
+      if len(stack) < 2:
+         err("Error: BLUFF requires at least two values on the stack")
+      a = pop()
+      b = pop()
+      stack.append(a)
+      stack.append(b)
    elif instr == "CUT":
       a = pop()
       stack.insert(0, a)
