@@ -32,6 +32,8 @@ All values on the stack are integers. Characters are represented by their ASCII 
 | `BET n`      | Push the integer `n` directly onto the stack. |
 | `CALL`       | Duplicate the top value. Pops it, then pushes it back twice. |
 | `FOLD`       | Subtraction. Pops `A` (top), then pops `B` (second), and pushes `B - A`. |
+| `SNAPCALL`   | Addition. Pops `A` (top), then pops `B` (second), and pushes `B + A`. |
+| `SHOWDOWN`   | Compare the top and bottom of the stack. If stack has fewer than 2 values, pushes `0` (done). If top equals bottom, removes both and pushes `1` (match). If they differ, removes both and pushes `2` (mismatch). |
 | `DEAL`       | Read one line of input. Pushes the ASCII code of the first character. If input is empty or exhausted, pushes `0`. |
 | `SHOW`       | Pop the top value and print it as a character (using its ASCII code). |
 | `STACK`      | Pop the top value and print it as an integer. |
@@ -50,6 +52,8 @@ All values on the stack are integers. Characters are represented by their ASCII 
 - **Unconditional jumps:** Push `0` with `ANTE`, then immediately `ALLIN n`. Since the top is guaranteed to be `0`, the jump always fires.
 - **Stack rotation:** `CUT` and `SHUFFLE` let you access values buried in the stack without losing them. `CUT` sends the top to the bottom; `SHUFFLE` brings the bottom to the top.
 - **Swapping:** `BLUFF` swaps the top two values. Simpler than `CUT`/`SHUFFLE` when you only need to reorder the top two elements.
+- **Addition with `SNAPCALL`:** Pops the top two values and pushes their sum. The addition counterpart to `FOLD` (subtraction).
+- **Comparing with `SHOWDOWN`:** Compares the top and bottom of the stack. Returns `0` if the stack is exhausted (fewer than 2 values), `1` if they match, or `2` if they differ. Useful for palindrome checking and similar symmetry tests.
 
 ---
 
